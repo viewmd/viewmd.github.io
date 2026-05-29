@@ -13,23 +13,23 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0f0f0f;
-    --surface: #161616;
-    --border: #242424;
-    --text: #e8e6e1;
-    --muted: #6b6b6b;
-    --accent: #c8a96e;
-    --code-bg: #1a1a1a;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --code-bg: #161b22;
   }
 
   :root[data-theme="light"] {
-    --bg: #fbfbf9;
-    --surface: #f3f3f0;
-    --border: #e4e4e0;
-    --text: #1a1a1a;
-    --muted: #707070;
-    --accent: #967237;
-    --code-bg: #f5f5f2;
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --border: #d0d7de;
+    --text: #24292f;
+    --muted: #57606a;
+    --accent: #0969da;
+    --code-bg: #f6f8fa;
   }
 
   html, body {
@@ -96,11 +96,12 @@
     color: var(--muted);
   }
 
-  #error { color: #c0665a; }
+  #error { color: #f85149; }
 
   #home-view {
     padding-top: 100px;
     text-align: center;
+    animation: fadeIn 0.4s ease-out;
   }
 
   #home-view h1 {
@@ -135,6 +136,15 @@
     border-color: var(--accent);
   }
 
+  .md {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
     font-family: 'Newsreader', Georgia, serif;
     font-weight: 500;
@@ -149,23 +159,22 @@
 
   .md p { margin: 1em 0; }
 
-  .md a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-  .md a:hover { opacity: 0.8; }
+  .md a { color: var(--accent); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
 
   .md code {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82em;
+    font-size: 0.85em;
     background: var(--code-bg);
-    border: 1px solid var(--border);
-    padding: 1px 6px;
-    border-radius: 3px;
-    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--text);
   }
 
   .md pre {
     background: var(--code-bg);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: 6px;
     padding: 16px 20px;
     overflow-x: auto;
     margin: 1.4em 0;
@@ -177,25 +186,35 @@
     padding: 0;
     font-size: 0.84em;
     color: var(--text);
+    border-radius: 0;
   }
 
   .md blockquote {
-    border-left: 3px solid var(--accent);
-    padding: 4px 0 4px 20px;
+    border-left: 4px solid var(--border);
+    padding: 0 1em;
     margin: 1.2em 0;
     color: var(--muted);
-    font-style: italic;
   }
 
   .md ul, .md ol {
-    padding-left: 1.6em;
+    padding-left: 2em;
     margin: 0.8em 0;
   }
 
-  .md li { margin: 0.3em 0; }
+  .md li { margin: 0.25em 0; }
+
+  .md input[type="checkbox"] {
+    margin-right: 6px;
+    accent-color: var(--accent);
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
 
   .md table {
+    display: block;
     width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     margin: 1.4em 0;
     font-size: 0.9em;
@@ -209,7 +228,6 @@
     font-weight: 500;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85em;
-    color: var(--accent);
   }
 
   .md td {
@@ -223,7 +241,7 @@
 
   .md hr {
     border: none;
-    border-top: 1px solid var(--border);
+    border-top: 2px solid var(--border);
     margin: 2em 0;
   }
 
@@ -359,7 +377,13 @@
       document.getElementById('loading').style.display = 'none';
       
       const el = document.getElementById('content');
-      el.innerHTML = md.render(text);
+      let htmlContent = md.render(text);
+      
+      htmlContent = htmlContent
+        .replace(/\[ \]/g, '<input type="checkbox" disabled>')
+        .replace(/\[x\]/g, '<input type="checkbox" checked disabled>');
+        
+      el.innerHTML = htmlContent;
       
       fixRelativePaths(el, info.baseRawDir);
       
