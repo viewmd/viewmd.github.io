@@ -20,6 +20,16 @@
     --code-bg: #1a1a1a;
   }
 
+  :root[data-theme="light"] {
+    --bg: #fbfbf9;
+    --surface: #f3f3f0;
+    --border: #e4e4e0;
+    --text: #1a1a1a;
+    --muted: #707070;
+    --accent: #967237;
+    --code-bg: #f5f5f2;
+  }
+
   html, body {
     background: var(--bg);
     color: var(--text);
@@ -42,16 +52,6 @@
     z-index: 100;
   }
 
-  #topbar .logo {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-    text-decoration: none;
-  }
-
-  #topbar .sep { color: var(--border); font-size: 18px; }
-
   #topbar .filepath {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -62,19 +62,20 @@
     flex: 1;
   }
 
-  #topbar .raw-link {
+  #topbar #theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: var(--muted);
-    text-decoration: none;
-    border: 1px solid var(--border);
     padding: 3px 10px;
     border-radius: 3px;
+    cursor: pointer;
     white-space: nowrap;
     transition: color 0.15s, border-color 0.15s;
   }
 
-  #topbar .raw-link:hover {
+  #topbar #theme-toggle:hover {
     color: var(--accent);
     border-color: var(--accent);
   }
@@ -119,7 +120,7 @@
     border: 1px solid var(--border);
     padding: 1px 6px;
     border-radius: 3px;
-    color: #c8a96e;
+    color: var(--accent);
   }
 
   .md pre {
@@ -197,10 +198,8 @@
 <body>
 
 <div id="topbar">
-  <a class="logo" href="https://viewmd.github.io">viewmd</a>
-  <span class="sep">/</span>
   <span class="filepath" id="filepath"></span>
-  <a class="raw-link" id="rawlink" href="#" target="_blank">raw</a>
+  <button id="theme-toggle"></button>
 </div>
 
 <div id="container">
@@ -211,6 +210,18 @@
 
 <script>
   const md = window.markdownit({ html: false, linkify: true, typographer: true });
+
+  const toggleBtn = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  toggleBtn.textContent = currentTheme === 'dark' ? 'light' : 'dark';
+
+  toggleBtn.addEventListener('click', () => {
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    toggleBtn.textContent = theme === 'dark' ? 'light' : 'dark';
+  });
 
   function buildRawUrl(pathname) {
     const parts = pathname.replace(/^\//, '').split('/');
@@ -253,7 +264,6 @@
     }
 
     document.getElementById('filepath').textContent = info.display;
-    document.getElementById('rawlink').href = info.raw;
     document.title = info.display.split('/').pop() + ' — viewmd';
 
     try {
