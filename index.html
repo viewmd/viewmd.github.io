@@ -218,11 +218,20 @@
 
     const [owner, repo, ...rest] = parts;
     let branch = 'main';
-    let fileParts = rest;
+    let fileParts = [];
 
-    if (rest[0] && rest[0].startsWith('@')) {
+    if (rest[0] === 'blob' && rest[1]) {
+      branch = rest[1];
+      fileParts = rest.slice(2);
+    } else if (rest[0] === 'refs' && rest[1] === 'heads' && rest[2]) {
+      branch = rest[2];
+      fileParts = rest.slice(3);
+    } else if (rest[0] && rest[0].startsWith('@')) {
       branch = rest[0].slice(1);
       fileParts = rest.slice(1);
+    } else {
+      branch = 'main';
+      fileParts = rest;
     }
 
     let filePath = fileParts.join('/');
