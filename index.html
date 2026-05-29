@@ -95,7 +95,6 @@
 
   #error { color: #c0665a; }
 
-  /* Markdown styles */
   .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
     font-family: 'Newsreader', Georgia, serif;
     font-weight: 500;
@@ -214,10 +213,6 @@
   const md = window.markdownit({ html: false, linkify: true, typographer: true });
 
   function buildRawUrl(pathname) {
-    // pathname: /owner/repo/branch_or_path...
-    // We support two formats:
-    // /owner/repo/path/to/FILE       → default branch = main
-    // /owner/repo/@branch/path/FILE  → explicit branch with @
     const parts = pathname.replace(/^\//, '').split('/');
     if (parts.length < 3) return null;
 
@@ -230,7 +225,6 @@
       fileParts = rest.slice(1);
     }
 
-    // Add .md extension if missing
     let filePath = fileParts.join('/');
     if (!filePath.endsWith('.md')) filePath += '.md';
 
@@ -273,10 +267,10 @@
     el.style.display = 'block';
   }
 
-  const redirect = sessionStorage.getItem('redirect');
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirect = urlParams.get('p');
   if (redirect) {
-    sessionStorage.removeItem('redirect');
-    window.history.replaceState(null, '', redirect);
+    window.history.replaceState(null, '', decodeURIComponent(redirect));
   }
 
   main();
