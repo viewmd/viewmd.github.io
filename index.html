@@ -6,7 +6,9 @@
 <title>viewmd</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hl-theme">
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@14/dist/markdown-it.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -95,6 +97,43 @@
   }
 
   #error { color: #c0665a; }
+
+  #home-view {
+    padding-top: 100px;
+    text-align: center;
+  }
+
+  #home-view h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  #home-view p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 30px;
+  }
+
+  #home-view input {
+    width: 100%;
+    max-width: 500px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  #home-view input:focus {
+    border-color: var(--accent);
+  }
 
   .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
     font-family: 'Newsreader', Georgia, serif;
@@ -205,6 +244,11 @@
 <div id="container">
   <div id="loading">loading...</div>
   <div id="error" style="display:none"></div>
+  <div id="home-view" style="display:none">
+    <h1>viewmd</h1>
+    <p>minimalist markdown viewer for github</p>
+    <input type="text" id="url-input" placeholder="paste github url here (e.g., github.com/user/repo/blob/main/README.md)">
+  </div>
   <div id="content" class="md" style="display:none"></div>
 </div>
 
@@ -212,15 +256,32 @@
   const md = window.markdownit({ html: false, linkify: true, typographer: true });
 
   const toggleBtn = document.getElementById('theme-toggle');
+  const hlTheme = document.getElementById('hl-theme');
   const currentTheme = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', currentTheme);
-  toggleBtn.textContent = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    toggleBtn.textContent = theme === 'dark' ? 'light' : 'dark';
+    hlTheme.href = theme === 'dark' 
+      ? 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css'
+      : 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css';
+  }
+  
+  applyTheme(currentTheme);
 
   toggleBtn.addEventListener('click', () => {
     const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-    toggleBtn.textContent = theme === 'dark' ? 'light' : 'dark';
+    applyTheme(theme);
+  });
+
+  document.getElementById('url-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      let val = e.target.value.trim();
+      if (!val) return;
+      val = val.replace(/^(https?:\/\/)?(www\.)?github\.com/, '');
+      window.location.href = window.location.origin + val;
+    }
   });
 
   function buildRawUrl(pathname) {
@@ -248,16 +309,41 @@
     let filePath = fileParts.join('/');
     if (!filePath.endsWith('.md')) filePath += '.md';
 
+    const baseRawDir = `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/${branch}/${fileParts.slice(0, -1).join('/')}`;
+
     return {
       raw: `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/${branch}/${filePath}`,
       display: `${owner}/${repo}/${fileParts.join('/')}`,
+      baseRawDir: baseRawDir ? baseRawDir + '/' : ''
     };
+  }
+
+  function fixRelativePaths(el, baseUrl) {
+    el.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+        img.src = baseUrl + src.replace(/^\.\//, '');
+      }
+    });
+    el.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && !href.startsWith('http') && !href.startsWith('#')) {
+        a.href = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/' + href.replace(/^\.\//, '');
+      }
+    });
   }
 
   async function main() {
     const pathname = window.location.pathname;
-    const info = buildRawUrl(pathname);
+    
+    if (pathname === '/' || pathname === '') {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('home-view').style.display = 'block';
+      document.getElementById('filepath').textContent = '~';
+      return;
+    }
 
+    const info = buildRawUrl(pathname);
     if (!info) {
       showError('Invalid URL. Usage: viewmd.github.io/owner/repo/path/to/FILE');
       return;
@@ -271,8 +357,13 @@
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const text = await res.text();
       document.getElementById('loading').style.display = 'none';
+      
       const el = document.getElementById('content');
       el.innerHTML = md.render(text);
+      
+      fixRelativePaths(el, info.baseRawDir);
+      el.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+      
       el.style.display = 'block';
     } catch (e) {
       showError(`Failed to load file: ${e.message}`);
