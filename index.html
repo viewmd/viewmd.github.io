@@ -362,7 +362,10 @@
       el.innerHTML = md.render(text);
       
       fixRelativePaths(el, info.baseRawDir);
-      el.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+      
+      if (typeof hljs !== 'undefined') {
+        el.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+      }
       
       el.style.display = 'block';
     } catch (e) {
